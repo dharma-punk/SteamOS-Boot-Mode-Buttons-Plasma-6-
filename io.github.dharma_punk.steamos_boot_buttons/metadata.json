@@ -1,0 +1,13 @@
+{
+  "KPackageStructure": "Plasma/Applet",
+  "KPlugin": {
+    "Id": "io.github.dharma_punk.steamos_boot_buttons",
+    "Name": "SteamOS Boot Mode Buttons",
+    "Description": "Two buttons to set the default boot to Desktop (X11 persistent) or Gaming Mode",
+    "Version": "1.0",
+    "License": "MIT",
+    "Category": "System"
+  },
+  "X-Plasma-API-Minimum-Version": "6.0",
+  "X-Plasma-API": "declarativeappletscript"
+}
