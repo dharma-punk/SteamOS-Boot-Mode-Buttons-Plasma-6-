@@ -3,8 +3,8 @@
   "KPlugin": {
     "Id": "io.github.dharma_punk.steamos_boot_buttons",
     "Name": "SteamOS Boot Mode Buttons",
-    "Description": "Two buttons to set the default boot to Desktop (X11 persistent) or Gaming Mode",
-    "Version": "1.0",
+    "Description": "Polished SteamOS boot widget with preset profiles, robust command checks, reboot action, i18n and accessibility",
+    "Version": "1.7",
     "License": "MIT",
     "Category": "System"
   },
