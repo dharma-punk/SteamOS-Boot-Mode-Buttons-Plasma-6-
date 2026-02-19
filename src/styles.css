@@ -1,0 +1,71 @@
+:root {
+  color: #0f172a;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background-color: #f1f5f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  padding: 24px;
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.sidebar nav {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar a {
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+}
+
+.sidebar a.active,
+.sidebar a:hover {
+  color: #fff;
+  background: #1e293b;
+}
+
+.main-content {
+  padding: 20px 28px;
+}
+
+.topbar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 180px;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+input,
+select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: white;
+}
+
+section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  min-height: 240px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
