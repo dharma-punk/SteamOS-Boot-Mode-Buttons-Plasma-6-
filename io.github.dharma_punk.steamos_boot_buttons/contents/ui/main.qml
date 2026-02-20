@@ -294,5 +294,22 @@ PlasmoidItem {
             text: statusDetails
             Accessible.name: text
         }
+
+        PlasmaComponents3.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            opacity: 0.85
+            text: statusMessage
+            Accessible.name: text
+        }
+
+        PlasmaComponents3.Label {
+            visible: !inPanel && statusDetails.length > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            opacity: 0.7
+            text: statusDetails
+            Accessible.name: text
+        }
     }
 }
