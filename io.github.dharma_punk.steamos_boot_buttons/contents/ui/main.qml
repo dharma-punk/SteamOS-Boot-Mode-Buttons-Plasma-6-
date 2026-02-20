@@ -179,6 +179,15 @@ PlasmoidItem {
         function onProfilePresetChanged() { refreshDependencyStatus() }
         function onCustomDesktopCommandChanged() { refreshDependencyStatus() }
         function onCustomGameCommandChanged() { refreshDependencyStatus() }
+        }
+
+        function run(cmd) {
+            connectSource(cmd)
+        }
+    }
+
+    Component.onCompleted: {
+        exec.run("command -v steamos-session-select >/dev/null 2>&1")
     }
 
     ColumnLayout {
@@ -232,6 +241,25 @@ PlasmoidItem {
                 Accessible.name: i18n("Set gaming mode as default boot")
                 Accessible.description: i18n("Runs configured game selection command")
                 onClicked: runAction("game", effectiveGameCommand(), Plasmoid.configuration.confirmBeforeApply)
+
+            PlasmaComponents3.Button {
+                text: inPanel ? i18n("Desktop") : (Plasmoid.configuration.desktopButtonText || i18n("Set Desktop Boot"))
+                icon.name: "computer"
+                enabled: executionStatus !== statusRunning
+                Layout.fillWidth: true
+                Accessible.name: i18n("Set desktop mode as default boot")
+                Accessible.description: i18n("Runs configured desktop selection command")
+                onClicked: runAction("desktop", effectiveDesktopCommand(), Plasmoid.configuration.confirmBeforeApply)
+            }
+
+            PlasmaComponents3.Button {
+                text: inPanel ? i18n("Game") : (Plasmoid.configuration.gameButtonText || i18n("Set Game Boot"))
+                icon.name: "applications-games"
+                enabled: executionStatus !== statusRunning
+                Layout.fillWidth: true
+                Accessible.name: i18n("Set gaming mode as default boot")
+                Accessible.description: i18n("Runs configured game selection command")
+                onClicked: runAction("game", effectiveGameCommand(), Plasmoid.configuration.confirmBeforeApply)
             }
 
             PlasmaComponents3.Button {
@@ -245,6 +273,55 @@ PlasmoidItem {
                 Accessible.description: i18n("Runs configured reboot command")
                 onClicked: runAction("reboot", effectiveRebootCommand(), Plasmoid.configuration.confirmReboot)
             }
+
+            PlasmaComponents3.Button {
+                visible: Plasmoid.configuration.showRebootButton
+                text: i18n("Reboot Now")
+                icon.name: "system-reboot"
+                enabled: executionStatus !== statusRunning
+                Layout.fillWidth: true
+                Layout.columnSpan: inPanel && !verticalPanel ? 2 : 1
+                Accessible.name: i18n("Reboot the system now")
+                Accessible.description: i18n("Runs configured reboot command")
+                onClicked: runAction("reboot", effectiveRebootCommand(), Plasmoid.configuration.confirmReboot)
+            }
+        }
+
+        PlasmaComponents3.Label {
+            Layout.fillWidth: true
+            visible: !inPanel
+            wrapMode: Text.WordWrap
+            color: executionStatus === statusError ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
+            Accessible.name: text
+            text: {
+                if (executionStatus === statusRunning) {
+                    return i18n("Status: Running")
+                }
+                if (executionStatus === statusSuccess) {
+                    return i18n("Status: Success")
+                }
+                if (executionStatus === statusError) {
+                    return i18n("Status: Error")
+                }
+                return i18n("Status: Idle")
+            }
+        }
+
+        PlasmaComponents3.Label {
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            opacity: 0.85
+            text: statusMessage
+            Accessible.name: text
+        }
+
+        PlasmaComponents3.Label {
+            visible: !inPanel && statusDetails.length > 0
+            Layout.fillWidth: true
+            wrapMode: Text.WordWrap
+            opacity: 0.7
+            text: statusDetails
+            Accessible.name: text
         }
 
         PlasmaComponents3.Label {

@@ -5,6 +5,7 @@
     "Name": "SteamOS Boot Mode Buttons",
     "Description": "Polished SteamOS boot widget with preset profiles, robust command checks, reboot action, i18n and accessibility",
     "Version": "1.8.1",
+    "Version": "1.8",
     "License": "MIT",
     "Category": "System"
   },
