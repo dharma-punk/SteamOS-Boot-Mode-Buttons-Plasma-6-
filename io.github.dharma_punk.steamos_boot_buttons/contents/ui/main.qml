@@ -190,15 +190,6 @@ PlasmoidItem {
         function onProfilePresetChanged() { refreshDependencyStatus() }
         function onCustomDesktopCommandChanged() { refreshDependencyStatus() }
         function onCustomGameCommandChanged() { refreshDependencyStatus() }
-        }
-
-        function run(cmd) {
-            connectSource(cmd)
-        }
-    }
-
-    Component.onCompleted: {
-        exec.run("command -v steamos-session-select >/dev/null 2>&1")
     }
 
     ColumnLayout {
@@ -265,50 +256,6 @@ PlasmoidItem {
                 Accessible.description: i18n("Runs configured reboot command")
                 onClicked: runAction("reboot", effectiveRebootCommand(), Plasmoid.configuration.confirmReboot)
             }
-
-            PlasmaComponents3.Button {
-                visible: Plasmoid.configuration.showRebootButton
-                text: i18n("Reboot Now")
-                icon.name: "system-reboot"
-                enabled: executionStatus !== statusRunning
-                Layout.fillWidth: true
-                Layout.columnSpan: inPanel && !verticalPanel ? 2 : 1
-                Accessible.name: i18n("Reboot the system now")
-                Accessible.description: i18n("Runs configured reboot command")
-                onClicked: runAction("reboot", effectiveRebootCommand(), Plasmoid.configuration.confirmReboot)
-            }
-        }
-
-        PlasmaComponents3.Label {
-            Layout.fillWidth: true
-            visible: !inPanel
-            wrapMode: Text.WordWrap
-            color: executionStatus === statusError ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
-            Accessible.name: text
-            text: {
-                if (executionStatus === statusRunning) {
-                    return i18n("Status: Running")
-                }
-                if (executionStatus === statusSuccess) {
-                    return i18n("Status: Success")
-                }
-                if (executionStatus === statusError) {
-                    return i18n("Status: Error")
-                }
-                return i18n("Status: Idle")
-            }
-
-            PlasmaComponents3.Button {
-                visible: Plasmoid.configuration.showRebootButton
-                text: i18n("Reboot Now")
-                icon.name: "system-reboot"
-                enabled: executionStatus !== statusRunning
-                Layout.fillWidth: true
-                Layout.columnSpan: inPanel && !verticalPanel ? 2 : 1
-                Accessible.name: i18n("Reboot the system now")
-                Accessible.description: i18n("Runs configured reboot command")
-                onClicked: runAction("reboot", effectiveRebootCommand(), Plasmoid.configuration.confirmReboot)
-            }
         }
 
         PlasmaComponents3.Label {
@@ -346,43 +293,6 @@ PlasmoidItem {
             opacity: 0.7
             text: statusDetails
             Accessible.name: text
-        }
-
-        PlasmaComponents3.Label {
-            Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            opacity: 0.85
-            text: statusMessage
-            Accessible.name: text
-        }
-
-        PlasmaComponents3.Label {
-            visible: !inPanel && statusDetails.length > 0
-            Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            opacity: 0.7
-            text: statusDetails
-            Accessible.name: text
-        }
-
-        PlasmaComponents3.Label {
-            Layout.fillWidth: true
-            visible: !inPanel
-            wrapMode: Text.WordWrap
-            color: executionStatus === statusError ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
-            Accessible.name: text
-            text: {
-                if (executionStatus === statusRunning) {
-                    return i18n("Status: Running")
-                }
-                if (executionStatus === statusSuccess) {
-                    return i18n("Status: Success")
-                }
-                if (executionStatus === statusError) {
-                    return i18n("Status: Error")
-                }
-                return i18n("Status: Idle")
-            }
         }
 
         PlasmaComponents3.Label {

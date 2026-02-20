@@ -20,21 +20,25 @@ A KDE Plasma 6 widget (plasmoid) for quickly switching SteamOS default boot mode
 - `kpackagetool6`
 - SteamOS command support (`steamos-session-select`)
 
-## Install
+## Quick install (terminal)
 
-### From ZIP
-
-```bash
-kpackagetool6 -t Plasma/Applet -i io.github.dharma_punk.steamos_boot_buttons.zip
-```
-
-### Update existing install
+> `kpackagetool6` **does not download files** from GitHub URLs by itself. It installs a **local** package file.
 
 ```bash
-kpackagetool6 -t Plasma/Applet -u io.github.dharma_punk.steamos_boot_buttons.zip
+kpackagetool6 -t Plasma/Applet -i /full/path/to/io.github.dharma_punk.steamos_boot_buttons.zip
 ```
 
-### Remove
+## GitHub install guide (step-by-step)
+
+See [INSTALL.md](INSTALL.md) for full GUI + terminal instructions, including where to download the right ZIP and where to place files.
+
+## Update existing install
+
+```bash
+kpackagetool6 -t Plasma/Applet -u /full/path/to/io.github.dharma_punk.steamos_boot_buttons.zip
+```
+
+## Remove
 
 ```bash
 kpackagetool6 -t Plasma/Applet -r io.github.dharma_punk.steamos_boot_buttons
