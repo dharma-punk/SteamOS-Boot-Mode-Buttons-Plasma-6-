@@ -150,7 +150,7 @@ PlasmoidItem {
             const message = stdout !== "" ? stdout : (stderr !== "" ? stderr : i18n("No output"))
 
             if (sourceName === "command -v steamos-session-select >/dev/null 2>&1") {
-                if (exitCode !== 0) {
+                if (exitCode !== 0 && executionStatus !== statusRunning) {
                     executionStatus = statusError
                     statusMessage = i18n("Required tool is unavailable")
                     statusDetails = i18n("steamos-session-select was not found in PATH.")
