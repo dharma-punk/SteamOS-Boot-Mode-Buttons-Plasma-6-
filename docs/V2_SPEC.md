@@ -78,6 +78,10 @@ Persisted fields:
 - ✅ Optional notifications and reboot action are implemented with configurable confirmation.
 - ✅ Localization-ready UI strings and improved accessibility names/descriptions for controls and status text.
 
+## Phase 4
+
+- ✅ Advanced options: preset profiles, custom command overrides, command availability check, and optional reboot action with confirmation.
+
 ## Acceptance criteria for Phase 1
 
 - User can change labels and layout via widget settings.
@@ -85,7 +89,3 @@ Persisted fields:
 - Widget prevents duplicate concurrent command launches.
 - Default behavior remains equivalent to v1 without settings changes.
 
-
-## Phase 4
-
-- ✅ Advanced options: preset profiles, custom command overrides, command availability check, and optional reboot action with confirmation.
