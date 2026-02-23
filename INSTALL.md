@@ -1,5 +1,31 @@
 # Install Guide (GitHub + Terminal + GUI)
 
+## 0) Fast local install (download folder, then copy)
+
+If you already have the repository folder, you can skip ZIP packaging and copy directly:
+
+```bash
+mkdir -p ~/.local/share/plasma/plasmoids
+cp -a io.github.dharma_punk.steamos_boot_buttons ~/.local/share/plasma/plasmoids/
+kquitapp6 plasmashell && kstart6 plasmashell
+```
+
+Equivalent helper script:
+
+```bash
+bash scripts/install-local.sh
+```
+
+### Update with only `main.qml` (advanced)
+
+If you only want to update runtime logic, you can replace just the installed UI file:
+
+```bash
+cp -a io.github.dharma_punk.steamos_boot_buttons/contents/ui/main.qml \
+  ~/.local/share/plasma/plasmoids/io.github.dharma_punk.steamos_boot_buttons/contents/ui/main.qml
+kquitapp6 plasmashell && kstart6 plasmashell
+```
+
 This guide explains exactly how to install the widget from GitHub and why `kpackagetool6` may fail.
 
 ## 1) Download the correct ZIP from GitHub
