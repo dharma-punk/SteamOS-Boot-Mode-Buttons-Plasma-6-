@@ -1,5 +1,4 @@
 import QtQuick
-import org.kde.i18n 1.0
 import org.kde.kirigami 2 as Kirigami
 import org.kde.plasma.components 3.0 as PlasmaComponents3
 
