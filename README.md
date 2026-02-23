@@ -20,6 +20,23 @@ A KDE Plasma 6 widget (plasmoid) for quickly switching SteamOS default boot mode
 - `kpackagetool6`
 - SteamOS command support (`steamos-session-select`)
 
+## Zero-tool install (copy folder into plasmoids directory)
+
+If you prefer a simple “download and drop in” flow, copy the plasmoid folder directly:
+
+```bash
+mkdir -p ~/.local/share/plasma/plasmoids
+cp -a io.github.dharma_punk.steamos_boot_buttons ~/.local/share/plasma/plasmoids/
+```
+
+Then restart Plasma shell (or log out/in):
+
+```bash
+kquitapp6 plasmashell && kstart6 plasmashell
+```
+
+You can automate this with `scripts/install-local.sh`.
+
 ## Quick install (terminal)
 
 > `kpackagetool6` **does not download files** from GitHub URLs by itself. It installs a **local** package file.

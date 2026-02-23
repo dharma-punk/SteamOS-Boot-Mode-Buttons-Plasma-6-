@@ -30,6 +30,9 @@ PlasmoidItem {
     property string statusDetails: ""
     property string pendingActionKey: ""
     property bool dependencyCheckQueued: false
+    property int requestCounter: 0
+    property var latestSources: ({ action: "", dependency: "" })
+    property var latestAction: ({ key: "", command: "" })
 
     function parseExitCode(data) {
         if (data["exit code"] !== undefined) {
@@ -60,8 +63,34 @@ PlasmoidItem {
         return command.indexOf("steamos-session-select") !== -1
     }
 
+    function isSafeCommand(command) {
+        return !/[;&|`$<>\n\r]/.test(command)
+    }
+
+    function actionDisplayName(actionKey) {
+        if (actionKey === "desktop") {
+            return i18n("Desktop")
+        }
+        if (actionKey === "game") {
+            return i18n("Game")
+        }
+        if (actionKey === "reboot") {
+            return i18n("Reboot")
+        }
+        return i18n("Action")
+    }
+
+    function actionDetailText(actionKey, command, message) {
+        return i18n("%1 command (%2): %3", actionDisplayName(actionKey), command, message)
+    }
+
     function shouldCheckSteamHelper() {
         return commandNeedsSteamHelper(effectiveDesktopCommand()) || commandNeedsSteamHelper(effectiveGameCommand())
+    }
+
+    function nextRequestSource(command) {
+        requestCounter += 1
+        return "CODEX_REQUEST_" + requestCounter + "=1; " + command
     }
 
     function refreshDependencyStatus() {
@@ -72,12 +101,22 @@ PlasmoidItem {
 
         dependencyCheckQueued = false
         if (shouldCheckSteamHelper()) {
-            exec.run("command -v steamos-session-select >/dev/null 2>&1")
+            latestSources.dependency = nextRequestSource("command -v steamos-session-select >/dev/null 2>&1")
+            exec.run(latestSources.dependency, "dependency")
         } else if (statusMessage === i18n("Required tool is unavailable")) {
-            executionStatus = statusIdle
-            statusMessage = i18n("Ready")
-            statusDetails = ""
+            setStatus(statusIdle, i18n("Ready"), "")
+            latestSources.dependency = ""
         }
+    }
+
+    function scheduleDependencyStatusRefresh() {
+        dependencyRefreshDebounce.restart()
+    }
+
+    function setStatus(status, message, details) {
+        executionStatus = status
+        statusMessage = message
+        statusDetails = details === undefined ? "" : details
     }
 
     function notify(text, isError) {
@@ -123,50 +162,65 @@ PlasmoidItem {
 
         if (confirmRequired && pendingActionKey !== actionKey) {
             pendingActionKey = actionKey
-            statusMessage = i18n("Press the same button again to confirm")
-            statusDetails = ""
-            executionStatus = statusIdle
+            setStatus(statusIdle, i18n("Press the same button again to confirm"), "")
+            return
+        }
+
+        if (!isSafeCommand(command)) {
+            pendingActionKey = ""
+            setStatus(statusError, i18n("Unsafe command blocked"), i18n("%1 command contains restricted shell characters: %2", actionDisplayName(actionKey), command))
+            notify(i18n("SteamOS action blocked: unsafe command"), true)
             return
         }
 
         pendingActionKey = ""
-        executionStatus = statusRunning
-        statusMessage = i18n("Applying change...")
-        statusDetails = ""
-        exec.run(command)
+        setStatus(statusRunning, i18n("Applying change..."), "")
+        latestAction = { key: actionKey, command: command }
+        latestSources.action = nextRequestSource(command)
+        exec.run(latestSources.action, "action")
     }
 
     Plasma5Support.DataSource {
         id: exec
         engine: "executable"
         connectedSources: []
+        property var sourceKinds: ({})
 
         onNewData: function(sourceName, data) {
             disconnectSource(sourceName)
+
+            const sourceKind = sourceKinds[sourceName]
+            delete sourceKinds[sourceName]
+
+            if (sourceKind === undefined) {
+                return
+            }
 
             const exitCode = parseExitCode(data)
             const stdout = parseOutput(data, "stdout")
             const stderr = parseOutput(data, "stderr")
             const message = stdout !== "" ? stdout : (stderr !== "" ? stderr : i18n("No output"))
 
-            if (sourceName === "command -v steamos-session-select >/dev/null 2>&1") {
+            if (sourceKind === "dependency") {
+                if (sourceName !== latestSources.dependency) {
+                    return
+                }
+
                 if (exitCode !== 0 && executionStatus !== statusRunning) {
-                    executionStatus = statusError
-                    statusMessage = i18n("Required tool is unavailable")
-                    statusDetails = i18n("steamos-session-select was not found in PATH.")
+                    setStatus(statusError, i18n("Required tool is unavailable"), i18n("steamos-session-select was not found in PATH."))
                 }
                 return
             }
 
+            if (sourceKind !== "action" || sourceName !== latestSources.action) {
+                return
+            }
+
             if (exitCode === 0) {
-                executionStatus = statusSuccess
-                statusMessage = i18n("Action completed successfully")
-                statusDetails = message
+                setStatus(statusSuccess, i18n("Action completed successfully"), actionDetailText(latestAction.key, latestAction.command, message))
                 notify(i18n("SteamOS action completed successfully"), false)
             } else {
-                executionStatus = statusError
-                statusMessage = i18n("Action failed")
-                statusDetails = message
+                setStatus(statusError, i18n("Action failed"), actionDetailText(latestAction.key, latestAction.command, message))
                 notify(i18n("SteamOS action failed"), true)
             }
 
@@ -175,9 +229,17 @@ PlasmoidItem {
             }
         }
 
-        function run(cmd) {
+        function run(cmd, kind) {
+            sourceKinds[cmd] = kind
             connectSource(cmd)
         }
+    }
+
+    Timer {
+        id: dependencyRefreshDebounce
+        interval: 200
+        repeat: false
+        onTriggered: refreshDependencyStatus()
     }
 
     Component.onCompleted: {
@@ -187,9 +249,9 @@ PlasmoidItem {
     Connections {
         target: Plasmoid.configuration
 
-        function onProfilePresetChanged() { refreshDependencyStatus() }
-        function onCustomDesktopCommandChanged() { refreshDependencyStatus() }
-        function onCustomGameCommandChanged() { refreshDependencyStatus() }
+        function onProfilePresetChanged() { scheduleDependencyStatusRefresh() }
+        function onCustomDesktopCommandChanged() { scheduleDependencyStatusRefresh() }
+        function onCustomGameCommandChanged() { scheduleDependencyStatusRefresh() }
     }
 
     ColumnLayout {
@@ -295,21 +357,5 @@ PlasmoidItem {
             Accessible.name: text
         }
 
-        PlasmaComponents3.Label {
-            Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            opacity: 0.85
-            text: statusMessage
-            Accessible.name: text
-        }
-
-        PlasmaComponents3.Label {
-            visible: !inPanel && statusDetails.length > 0
-            Layout.fillWidth: true
-            wrapMode: Text.WordWrap
-            opacity: 0.7
-            text: statusDetails
-            Accessible.name: text
-        }
     }
 }
