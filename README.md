@@ -1,87 +1,58 @@
-# SteamOS Boot Mode Buttons (Plasma 6)
+# SteamOS Boot Mode Buttons
 
-A KDE Plasma 6 widget (plasmoid) for quickly switching SteamOS default boot mode between Desktop and Gaming mode.
+A focused KDE Plasma 6 widget for choosing whether SteamOS starts in Desktop or Gaming mode after rebooting.
 
-## Features
+## What it does
 
-- One-click actions for Desktop and Gaming boot targets.
-- Optional confirmation before applying actions.
-- Inline status feedback and optional passive notifications.
-- Panel/Desktop adaptive layout behavior.
-- Advanced options:
-  - Preset profiles
-  - Custom command overrides
-  - Optional reboot action with configurable confirmation
-- i18n-ready user-facing strings and accessibility labels.
+- **Desktop** runs `steamos-session-select plasma-x11-persistent`.
+- **Gaming** runs `steamos-session-select gamescope`.
+- Buttons are disabled while a command is running.
+- The widget reports success, failure, or a missing SteamOS helper.
+
+The widget intentionally does not execute user-defined commands or include unrelated reboot and notification settings.
 
 ## Requirements
 
+- SteamOS with `steamos-session-select`
 - KDE Plasma 6
 - `kpackagetool6`
-- SteamOS command support (`steamos-session-select`)
 
-## Zero-tool install (copy folder into plasmoids directory)
+## Install
 
-If you prefer a simple “download and drop in” flow, copy the plasmoid folder directly:
-
-```bash
-mkdir -p ~/.local/share/plasma/plasmoids
-cp -a io.github.dharma_punk.steamos_boot_buttons ~/.local/share/plasma/plasmoids/
-```
-
-Then restart Plasma shell (or log out/in):
+Clone or download this repository, open a terminal in it, and run:
 
 ```bash
-kquitapp6 plasmashell && kstart6 plasmashell
+kpackagetool6 --type Plasma/Applet --install io.github.dharma_punk.steamos_boot_buttons
 ```
 
-You can automate this with `scripts/install-local.sh`.
+Then add **SteamOS Boot Mode Buttons** from Plasma's widget picker.
 
-## Quick install (terminal)
-
-> `kpackagetool6` **does not download files** from GitHub URLs by itself. It installs a **local** package file.
+To update an existing installation:
 
 ```bash
-kpackagetool6 -t Plasma/Applet -i /full/path/to/io.github.dharma_punk.steamos_boot_buttons.zip
+kpackagetool6 --type Plasma/Applet --upgrade io.github.dharma_punk.steamos_boot_buttons
 ```
 
-## GitHub install guide (step-by-step)
-
-See [INSTALL.md](INSTALL.md) for full GUI + terminal instructions, including where to download the right ZIP and where to place files.
-
-## Update existing install
+To remove it:
 
 ```bash
-kpackagetool6 -t Plasma/Applet -u /full/path/to/io.github.dharma_punk.steamos_boot_buttons.zip
+kpackagetool6 --type Plasma/Applet --remove io.github.dharma_punk.steamos_boot_buttons
 ```
 
-## Remove
+## Validate changes
+
+Run:
 
 ```bash
-kpackagetool6 -t Plasma/Applet -r io.github.dharma_punk.steamos_boot_buttons
+./scripts/validate.sh
 ```
 
-## Development
+The script validates the package metadata, checks for obsolete Plasma 5/Qt 5 declarations, and runs `qmllint` when it is installed.
 
-The widget source lives under:
+## Compatibility note
 
-- `io.github.dharma_punk.steamos_boot_buttons/`
-
-Key files:
-
-- `metadata.json` – package/plugin metadata
-- `contents/ui/main.qml` – main widget UI + runtime behavior
-- `contents/ui/configGeneral.qml` – settings page
-- `contents/config/main.xml` – persisted settings schema
-
-## Packaging for release
-
-Create a distributable ZIP containing only the plasmoid directory:
-
-```bash
-zip -r io.github.dharma_punk.steamos_boot_buttons.zip io.github.dharma_punk.steamos_boot_buttons
-```
+SteamOS session identifiers may change between releases. Verify the Desktop and Gaming commands on the SteamOS version you intend to support before publishing a release.
 
 ## License
 
-MIT.
+MIT
