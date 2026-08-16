@@ -13,7 +13,7 @@
     "Id": "io.github.dharma_punk.steamos_boot_buttons",
     "License": "MIT",
     "Name": "SteamOS Boot Mode Buttons",
-    "Version": "2.0.1",
+    "Version": "2.0.2",
     "Website": "https://github.com/dharma-punk/SteamOS-Boot-Mode-Buttons-Plasma-6-"
   },
   "X-Plasma-API-Minimum-Version": "6.0"
