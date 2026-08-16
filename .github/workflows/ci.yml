@@ -20,6 +20,14 @@ jobs:
       - name: Validate package
         run: bash scripts/validate.sh
 
+      - name: Validate installer syntax
+        run: bash -n install.sh
+
+      - name: Test latest-release installer download
+        env:
+          STEAMOS_BOOT_BUTTONS_DRY_RUN: "1"
+        run: bash install.sh
+
       - name: Build installable plasmoid
         run: bash scripts/package.sh
 
@@ -30,6 +38,8 @@ jobs:
           unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | sort
           unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | grep -qx 'metadata.json'
           unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | grep -qx 'contents/ui/main.qml'
+          unzip -p dist/SteamOS-Boot-Mode-Buttons.plasmoid metadata.json | grep -Fq '"KPackageStructure": "Plasma/Applet"'
+          unzip -p dist/SteamOS-Boot-Mode-Buttons.plasmoid metadata.json | grep -Fq '"Id": "io.github.dharma_punk.steamos_boot_buttons"'
 
       - name: Upload installable widget
         uses: actions/upload-artifact@v4
@@ -38,3 +48,4 @@ jobs:
           path: |
             dist/SteamOS-Boot-Mode-Buttons.plasmoid
             dist/SteamOS-Boot-Mode-Buttons.plasmoid.sha256
+            install.sh
