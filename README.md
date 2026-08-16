@@ -2,7 +2,7 @@
 
 A small KDE Plasma 6 widget that lets you choose whether SteamOS boots into **Desktop Mode** or **Gaming Mode**.
 
-Version 2.0 uses SteamOS's current `steamosctl` interface and is designed for SteamOS 3.8+.
+Version 2.0.1 uses SteamOS's current `steamosctl` interface and is designed for SteamOS 3.8+.
 
 ## What changed in 2.0
 
@@ -12,33 +12,37 @@ Version 2.0 uses SteamOS's current `steamosctl` interface and is designed for St
 - Uses current Plasma 6 metadata and unversioned QML imports.
 - Keeps the applet focused on two safe actions instead of arbitrary shell commands, reboot controls, or profile presets.
 - Adapts its layout for desktop and panel placement.
-- GitHub Actions validate every change and automatically publish a ready-to-install release ZIP whenever the version is bumped on `main`.
+- GitHub Actions validate every change and automatically publish a ready-to-install `.plasmoid` package whenever the version is bumped on `main`.
 
-Valve moved SteamOS desktop-session management toward `steamos-manager` in SteamOS 3.8, and Desktop Mode now defaults to Wayland. This widget intentionally follows that newer abstraction instead of managing SDDM sessions itself.
+## 2.0.1 installation fix
+
+The original 2.0.0 GitHub release used a `.zip` filename for the installable archive. Plasma's **Install from File…** flow expects a plasmoid package file. A `.plasmoid` is still a ZIP-formatted KPackage internally, but the `.plasmoid` extension is the correct file users should select in Plasma.
+
+Version 2.0.1 fixes the release format and adds CI checks for the archive structure and Plasma package metadata.
 
 ## Install — easiest method
 
 1. Open the repository's **Releases** page.
-2. Download **`SteamOS-Boot-Mode-Buttons.zip`** from the latest release.
+2. Download **`SteamOS-Boot-Mode-Buttons.plasmoid`** from the latest release.
 3. In Desktop Mode, right-click the desktop or panel and choose **Add Widgets**.
 4. Open **Get New Widgets** → **Install from File…**.
-5. Select the downloaded ZIP.
+5. Select the downloaded `.plasmoid` file.
 6. Add **SteamOS Boot Mode Buttons** to your desktop or panel.
 
 No terminal commands are required for normal installation.
 
 ### Terminal install
 
-You can also install the release ZIP with:
+You can also install the release package with:
 
 ```bash
-kpackagetool6 --type Plasma/Applet --install ~/Downloads/SteamOS-Boot-Mode-Buttons.zip
+kpackagetool6 --type Plasma/Applet --install ~/Downloads/SteamOS-Boot-Mode-Buttons.plasmoid
 ```
 
 To update an existing install:
 
 ```bash
-kpackagetool6 --type Plasma/Applet --upgrade ~/Downloads/SteamOS-Boot-Mode-Buttons.zip
+kpackagetool6 --type Plasma/Applet --upgrade ~/Downloads/SteamOS-Boot-Mode-Buttons.plasmoid
 ```
 
 To remove it:
@@ -78,17 +82,17 @@ Validate the package:
 bash scripts/validate.sh
 ```
 
-Build the same installable ZIP produced by GitHub Actions:
+Build the same installable `.plasmoid` produced by GitHub Actions:
 
 ```bash
 bash scripts/package.sh
 ```
 
-The archive is intentionally built with `metadata.json` and `contents/` at its root, matching KDE's Plasma widget package format.
+The `.plasmoid` is a ZIP-formatted archive with `metadata.json` and `contents/` at its root, matching KDE's Plasma widget package layout.
 
 ## Releases
 
-The `release.yml` workflow runs on pushes to `main`. It reads the version from `metadata.json`; if a matching `vX.Y.Z` tag does not already exist, it validates the widget, builds the ZIP, creates the tag/release, and uploads the ZIP plus its SHA-256 checksum.
+The `release.yml` workflow runs on pushes to `main`. It reads the version from `metadata.json`; if a matching `vX.Y.Z` tag does not already exist, it validates the widget, builds the `.plasmoid`, verifies the archive, creates the tag/release, and uploads the `.plasmoid` plus its SHA-256 checksum.
 
 For future releases, bump `KPlugin.Version` in `metadata.json` before merging to `main`.
 

@@ -11,6 +11,28 @@ test -f "${METADATA}"
 test -f "${MAIN_QML}"
 python3 -m json.tool "${METADATA}" >/dev/null
 
+python3 - "${METADATA}" <<'PY'
+import json
+import re
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as handle:
+    data = json.load(handle)
+
+plugin = data.get("KPlugin", {})
+checks = {
+    "KPackageStructure": data.get("KPackageStructure") == "Plasma/Applet",
+    "X-Plasma-API-Minimum-Version": data.get("X-Plasma-API-Minimum-Version") == "6.0",
+    "KPlugin.Id": plugin.get("Id") == "io.github.dharma_punk.steamos_boot_buttons",
+    "KPlugin.Name": bool(plugin.get("Name")),
+    "KPlugin.Version": bool(re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", str(plugin.get("Version", "")))),
+}
+
+failed = [name for name, ok in checks.items() if not ok]
+if failed:
+    raise SystemExit("Invalid Plasma package metadata: " + ", ".join(failed))
+PY
+
 VERSION="$(python3 - "${METADATA}" <<'PY'
 import json
 import sys
@@ -18,11 +40,6 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     print(json.load(handle)["KPlugin"]["Version"])
 PY
 )"
-
-if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "metadata.json Version must use semantic versioning (x.y.z)." >&2
-  exit 1
-fi
 
 if grep -Eq '"X-Plasma-API"|import .+ [0-9]+\.[0-9]+' "${METADATA}" "${MAIN_QML}"; then
   echo "Found an obsolete Plasma API key or versioned QML import." >&2

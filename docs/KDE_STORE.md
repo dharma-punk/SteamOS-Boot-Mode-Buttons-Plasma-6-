@@ -10,7 +10,7 @@ SteamOS Boot Mode Buttons v2 is intentionally a pure-QML Plasma 6 package so it 
 
 **Description:**
 
-SteamOS Boot Mode Buttons adds two focused actions to KDE Plasma: set Desktop Mode as the default boot target, or set Gaming Mode as the default boot target. Version 2.0 uses SteamOS's current `steamosctl` management interface and targets SteamOS 3.8+.
+SteamOS Boot Mode Buttons adds two focused actions to KDE Plasma: set Desktop Mode as the default boot target, or set Gaming Mode as the default boot target. Version 2.0.1 uses SteamOS's current `steamosctl` management interface and targets SteamOS 3.8+.
 
 The widget changes only the default boot/login mode. It does not immediately switch sessions, restart SDDM, reboot the device, or force X11/Wayland. Desktop session selection remains under SteamOS control.
 
@@ -20,7 +20,7 @@ The widget changes only the default boot/login mode. It does not immediately swi
 - KDE Plasma 6
 - `steamosctl`
 
-**Version:** 2.0.0
+**Version:** 2.0.1
 
 **License:** MIT
 
@@ -30,9 +30,9 @@ The widget changes only the default boot/login mode. It does not immediately swi
 
 ## Upload asset
 
-Use the exact `SteamOS-Boot-Mode-Buttons.zip` produced by `bash scripts/package.sh` or attached to the GitHub v2.0.0 release. Do not upload GitHub's automatically generated "Source code (zip)" archive.
+Use the exact `SteamOS-Boot-Mode-Buttons.plasmoid` produced by `bash scripts/package.sh` or attached to the latest GitHub release. Do not upload GitHub's automatically generated source archives.
 
-The installable ZIP must have this structure at its root:
+A `.plasmoid` is a ZIP-formatted Plasma KPackage. The archive must have this structure at its root:
 
 ```text
 metadata.json
@@ -49,11 +49,11 @@ contents/
 
 ## Publication checklist
 
-- [ ] Install the release ZIP on a current SteamOS 3.8+ device.
+- [ ] Install the release `.plasmoid` on a current SteamOS 3.8+ device using **Add Widgets → Get New Widgets → Install from File…**.
 - [ ] Verify Desktop changes the next boot target without refreshing/restarting the current desktop.
 - [ ] Verify Gaming changes the next boot target without switching the current session.
 - [ ] Reboot once after each choice and confirm the selected mode starts.
 - [ ] Capture current screenshots.
-- [ ] Upload the release ZIP to the KDE Store / OpenDesktop Plasma widget category.
+- [ ] Upload the release `.plasmoid` to the KDE Store / OpenDesktop Plasma widget category.
 - [ ] Add the GitHub repository as the source URL and Issues as the bug tracker.
 - [ ] Confirm installation works through Plasma's **Get New Widgets** UI.
