@@ -1,104 +1,191 @@
 # SteamOS Boot Mode Buttons
 
-A small KDE Plasma 6 widget that lets you choose whether SteamOS boots into **Desktop Mode** or **Gaming Mode**.
+**Choose whether SteamOS boots into Desktop Mode or Gaming Mode — without changing or restarting the session you are using right now.**
 
-Version 2.0.1 uses SteamOS's current `steamosctl` interface and is designed for SteamOS 3.8+.
+A lightweight KDE Plasma 6 widget for SteamOS 3.8+ that puts Valve's default-login-mode controls behind two simple buttons.
 
-## What changed in 2.0
+## Why use it?
 
-- Uses `steamosctl set-default-login-mode desktop` and `steamosctl set-default-login-mode game`.
-- Changes only the default boot/login mode; it does **not** switch the current session, restart SDDM, or force an immediate reboot.
-- Desktop Mode is session-neutral. The widget does not force X11 or Wayland; SteamOS keeps control of the user's configured desktop session.
-- Uses current Plasma 6 metadata and unversioned QML imports.
-- Keeps the applet focused on two safe actions instead of arbitrary shell commands, reboot controls, or profile presets.
-- Adapts its layout for desktop and panel placement.
-- GitHub Actions validate every change and automatically publish a ready-to-install `.plasmoid` package whenever the version is bumped on `main`.
+SteamOS normally makes Gaming Mode the center of the experience. That is great for handheld and couch gaming, but it can be annoying if you also use your Steam Deck or SteamOS machine like a regular computer.
 
-## 2.0.1 installation fix
+SteamOS Boot Mode Buttons is useful when you want to:
 
-The original 2.0.0 GitHub release used a `.zip` filename for the installable archive. Plasma's **Install from File…** flow expects a plasmoid package file. A `.plasmoid` is still a ZIP-formatted KPackage internally, but the `.plasmoid` extension is the correct file users should select in Plasma.
+- **Use a docked Steam Deck like a desktop PC** and boot straight into Desktop Mode.
+- **Return to the normal console-style experience** and make Gaming Mode the default again.
+- **Switch between desktop-first and gaming-first setups** without memorizing terminal commands.
+- Avoid the older persistent-session method that could refresh/restart the desktop or force a specific X11 session.
 
-Version 2.0.1 fixes the release format and adds CI checks for the archive structure and Plasma package metadata.
+## What it does
 
-## Install — easiest method
+The widget has two actions:
 
-1. Open the repository's **Releases** page.
-2. Download **`SteamOS-Boot-Mode-Buttons.plasmoid`** from the latest release.
-3. In Desktop Mode, right-click the desktop or panel and choose **Add Widgets**.
-4. Open **Get New Widgets** → **Install from File…**.
-5. Select the downloaded `.plasmoid` file.
-6. Add **SteamOS Boot Mode Buttons** to your desktop or panel.
+- **Desktop** → make Desktop Mode the default for future boots.
+- **Gaming** → make Gaming Mode the default for future boots.
 
-No terminal commands are required for normal installation.
-
-### Terminal install
-
-You can also install the release package with:
-
-```bash
-kpackagetool6 --type Plasma/Applet --install ~/Downloads/SteamOS-Boot-Mode-Buttons.plasmoid
-```
-
-To update an existing install:
-
-```bash
-kpackagetool6 --type Plasma/Applet --upgrade ~/Downloads/SteamOS-Boot-Mode-Buttons.plasmoid
-```
-
-To remove it:
-
-```bash
-kpackagetool6 --type Plasma/Applet --remove io.github.dharma_punk.steamos_boot_buttons
-```
-
-## How it works
-
-The two buttons run only these SteamOS commands:
+Under the hood it uses Valve's current SteamOS management interface:
 
 ```bash
 steamosctl set-default-login-mode desktop
 steamosctl set-default-login-mode game
 ```
 
-The choice takes effect after reboot/login. The widget deliberately does not call the live session-switching commands, so clicking a boot-mode button should not tear down the desktop you are currently using.
+The choice takes effect on a future boot/login. Pressing a button does **not** immediately switch sessions, reboot the device, restart SDDM, or force X11/Wayland.
 
-The applet checks for `steamosctl` at startup. If it is unavailable, the buttons remain disabled and the widget explains that SteamOS 3.8+ is required.
+## Features
+
+- Desktop and Gaming default-boot buttons.
+- Uses current `steamosctl` instead of legacy `steamos-session-select`.
+- Non-disruptive: keeps the current desktop/session running.
+- Desktop-session neutral: SteamOS remains in control of X11 vs Wayland.
+- Detects whether `steamosctl` is available before enabling actions.
+- Clear ready, working, success, and error status messages.
+- Prevents overlapping command runs.
+- Adapts to desktop, horizontal-panel, and vertical-panel placement.
+- Native Plasma 6 QML package with accessibility labels and descriptions.
+- No `sudo`, custom shell commands, reboot button, or background service.
+
+# Install
+
+## Recommended — paste one command
+
+On your Steam Deck, enter **Desktop Mode**, open **Konsole**, and paste:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/dharma-punk/SteamOS-Boot-Mode-Buttons-Plasma-6-/main/install.sh | bash
+```
+
+The installer:
+
+1. Downloads the **latest real widget release** directly from GitHub.
+2. Saves it to a temporary filename so browser naming does not matter.
+3. Verifies that it is a readable Plasma package with the expected files and plugin ID.
+4. Updates an existing copy when possible, or cleanly reinstalls it if necessary.
+5. Installs it with `kpackagetool6` without `sudo`.
+
+After it says **Installed successfully**, open **Add Widgets**, search for **SteamOS Boot Mode Buttons**, and add it to your desktop or panel.
+
+## GUI install — direct widget download
+
+**[⬇️ Download the latest SteamOS Boot Mode Buttons widget](https://github.com/dharma-punk/SteamOS-Boot-Mode-Buttons-Plasma-6-/releases/latest/download/SteamOS-Boot-Mode-Buttons.plasmoid)**
+
+Then:
+
+1. Open **Add Widgets** in Desktop Mode.
+2. Choose **Get New Widgets** → **Install from File…**.
+3. Select `SteamOS-Boot-Mode-Buttons.plasmoid`.
+4. Add the widget from the widget picker.
+
+> [!IMPORTANT]
+> **Do not use GitHub's green `Code` → `Download ZIP` button to install the widget.** That ZIP contains the entire source repository for developers, not the Plasma widget package. Plasma can correctly reject that source ZIP as an invalid package.
+
+For more installation and troubleshooting details, see [INSTALL.md](INSTALL.md).
+
+## How the widget behaves
+
+### Set Desktop boot
+
+```text
+Click Desktop
+     ↓
+SteamOS records Desktop as the default login mode
+     ↓
+Your current session stays open
+     ↓
+Reboot whenever you want
+     ↓
+SteamOS starts in Desktop Mode
+```
+
+### Set Gaming boot
+
+```text
+Click Gaming
+     ↓
+SteamOS records Gaming as the default login mode
+     ↓
+Your current session stays open
+     ↓
+Reboot whenever you want
+     ↓
+SteamOS starts in Gaming Mode
+```
+
+## What it intentionally does not do
+
+This widget does not:
+
+- switch you out of the session you are currently using;
+- automatically reboot;
+- restart SDDM or Plasma;
+- force Plasma X11 or Plasma Wayland;
+- modify arbitrary system files;
+- run user-entered shell commands;
+- require root access.
+
+It is intentionally a small GUI for SteamOS's default boot-mode setting.
 
 ## Compatibility
 
-| Environment | v2 status |
+| Environment | Status |
 | --- | --- |
 | SteamOS 3.8+ / Plasma 6 | Supported target |
-| Steam Deck LCD / OLED on current SteamOS | Supported target; device testing recommended |
-| Steam Machine / other current SteamOS hardware | API-compatible target; device testing recommended |
-| SteamOS 3.7 and older | Not supported by v2; uses the legacy session helper |
-| Non-SteamOS Plasma systems | Not supported unless they intentionally provide compatible `steamosctl` behavior |
+| Steam Deck LCD / OLED on current SteamOS | Supported target |
+| Other current SteamOS hardware | API-compatible target |
+| SteamOS releases without `steamosctl` | Not supported by v2 |
+| Non-SteamOS Plasma systems | Not supported unless they provide compatible `steamosctl` behavior |
 
-## Development
+## Troubleshooting
 
-Validate the package:
+### `No such file: ~/Downloads/SteamOS-Boot-Mode-Buttons.plasmoid`
+
+That means the file is **not actually saved under that exact filename**. It is a filename/path problem, not a widget-package validation error.
+
+Use the recommended one-command installer above and it will download the package itself.
+
+To see what your browser actually saved:
+
+```bash
+ls -lh ~/Downloads | grep -i 'SteamOS-Boot-Mode-Buttons'
+```
+
+### `Package is not considered valid`
+
+Make sure you did **not** select GitHub's repository/source ZIP from **Code → Download ZIP**.
+
+Use either:
+
+- the one-command installer above, or
+- the direct `.plasmoid` download link above.
+
+## For developers
+
+The installable Plasma package lives in:
+
+```text
+io.github.dharma_punk.steamos_boot_buttons/
+├── metadata.json
+└── contents/
+    └── ui/
+        └── main.qml
+```
+
+Validate it:
 
 ```bash
 bash scripts/validate.sh
 ```
 
-Build the same installable `.plasmoid` produced by GitHub Actions:
+Build the release package:
 
 ```bash
 bash scripts/package.sh
 ```
 
-The `.plasmoid` is a ZIP-formatted archive with `metadata.json` and `contents/` at its root, matching KDE's Plasma widget package layout.
+The resulting `.plasmoid` is ZIP-formatted internally and contains `metadata.json` and `contents/` at its archive root, matching KDE's Plasma 6 widget package structure.
 
-## Releases
+GitHub Actions validate package metadata and archive structure on every change. Release automation publishes the installable `.plasmoid` plus its SHA-256 checksum whenever the widget version is bumped on `main`.
 
-The `release.yml` workflow runs on pushes to `main`. It reads the version from `metadata.json`; if a matching `vX.Y.Z` tag does not already exist, it validates the widget, builds the `.plasmoid`, verifies the archive, creates the tag/release, and uploads the `.plasmoid` plus its SHA-256 checksum.
-
-For future releases, bump `KPlugin.Version` in `metadata.json` before merging to `main`.
-
-## KDE Store
-
-The v2 package remains pure QML and requires no compiled plugin, keeping it compatible with KDE Store distribution. See [`docs/KDE_STORE.md`](docs/KDE_STORE.md) for a ready-to-use listing and publication checklist.
+See [docs/KDE_STORE.md](docs/KDE_STORE.md) for KDE Store publication notes.
 
 ## License
 
