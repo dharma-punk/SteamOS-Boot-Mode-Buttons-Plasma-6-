@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1
+
+- Fixed manual installation through Plasma's **Install from File…** flow by publishing the installable archive with the correct `.plasmoid` extension instead of `.zip`.
+- Kept the package internally ZIP-formatted with `metadata.json` and `contents/` at the archive root.
+- Added CI checks for the `.plasmoid` archive, required package files, `KPackageStructure`, Plasma 6 minimum API, plugin ID, and semantic version.
+- Updated release automation and installation documentation to use `SteamOS-Boot-Mode-Buttons.plasmoid`.
+
 ## 2.0.0
 
 - Migrated boot-mode control from the legacy `steamos-session-select` helper to `steamosctl set-default-login-mode`.
@@ -9,5 +16,5 @@
 - Modernized Plasma 6 QML imports and metadata.
 - Added capability detection for `steamosctl` and explicit SteamOS 3.8+ compatibility messaging.
 - Added panel-aware layout behavior and accessibility descriptions.
-- Added package validation, reproducible ZIP packaging, CI artifacts, and automatic GitHub Releases.
+- Added package validation, reproducible release packaging, CI artifacts, and automatic GitHub Releases.
 - Added KDE Store publication guidance.
