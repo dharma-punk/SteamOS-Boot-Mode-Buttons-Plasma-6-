@@ -20,19 +20,21 @@ jobs:
       - name: Validate package
         run: bash scripts/validate.sh
 
-      - name: Build installable ZIP
+      - name: Build installable plasmoid
         run: bash scripts/package.sh
 
-      - name: Inspect archive root
+      - name: Inspect plasmoid archive
         run: |
-          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.zip | sort
-          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.zip | grep -qx 'metadata.json'
-          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.zip | grep -qx 'contents/ui/main.qml'
+          test -f dist/SteamOS-Boot-Mode-Buttons.plasmoid
+          unzip -tqq dist/SteamOS-Boot-Mode-Buttons.plasmoid
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | sort
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | grep -qx 'metadata.json'
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | grep -qx 'contents/ui/main.qml'
 
       - name: Upload installable widget
         uses: actions/upload-artifact@v4
         with:
           name: SteamOS-Boot-Mode-Buttons
           path: |
-            dist/SteamOS-Boot-Mode-Buttons.zip
-            dist/SteamOS-Boot-Mode-Buttons.zip.sha256
+            dist/SteamOS-Boot-Mode-Buttons.plasmoid
+            dist/SteamOS-Boot-Mode-Buttons.plasmoid.sha256
