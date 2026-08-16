@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.0.2
+
+- Added a filename-independent one-command installer for SteamOS Desktop Mode.
+- The installer downloads the latest release directly, validates the package archive and plugin ID, and updates or cleanly reinstalls the widget as needed.
+- Added CI coverage for installer syntax and the live `releases/latest` download path.
+- Reworked the GitHub front page around real use cases, features, how the widget behaves, and two clear installation paths.
+- Added an explicit warning that GitHub's green **Code → Download ZIP** source archive is not an installable Plasma widget.
+- Added direct-download and troubleshooting guidance for filename/path errors and invalid source ZIPs.
+- Release automation now includes `install.sh` alongside the `.plasmoid` and checksum.
+
 ## 2.0.1
 
 - Fixed manual installation through Plasma's **Install from File…** flow by publishing the installable archive with the correct `.plasmoid` extension instead of `.zip`.
