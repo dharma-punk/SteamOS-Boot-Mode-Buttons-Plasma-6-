@@ -22,6 +22,9 @@ jobs:
       - name: Validate package
         run: bash scripts/validate.sh
 
+      - name: Validate installer syntax
+        run: bash -n install.sh
+
       - name: Read package version
         id: version
         shell: bash
@@ -52,11 +55,13 @@ jobs:
         if: steps.existing.outputs.exists == 'false'
         run: bash scripts/package.sh
 
-      - name: Verify release asset extension
+      - name: Verify release package
         if: steps.existing.outputs.exists == 'false'
         run: |
           test -f dist/SteamOS-Boot-Mode-Buttons.plasmoid
           unzip -tqq dist/SteamOS-Boot-Mode-Buttons.plasmoid
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | grep -qx 'metadata.json'
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.plasmoid | grep -qx 'contents/ui/main.qml'
 
       - name: Publish GitHub release
         if: steps.existing.outputs.exists == 'false'
@@ -69,6 +74,7 @@ jobs:
           gh release create "${TAG}" \
             dist/SteamOS-Boot-Mode-Buttons.plasmoid \
             dist/SteamOS-Boot-Mode-Buttons.plasmoid.sha256 \
+            install.sh \
             --target "${GITHUB_SHA}" \
             --title "SteamOS Boot Mode Buttons ${VERSION}" \
             --generate-notes
