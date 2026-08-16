@@ -1,0 +1,38 @@
+name: Validate widget
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Validate package
+        run: bash scripts/validate.sh
+
+      - name: Build installable ZIP
+        run: bash scripts/package.sh
+
+      - name: Inspect archive root
+        run: |
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.zip | sort
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.zip | grep -qx 'metadata.json'
+          unzip -Z1 dist/SteamOS-Boot-Mode-Buttons.zip | grep -qx 'contents/ui/main.qml'
+
+      - name: Upload installable widget
+        uses: actions/upload-artifact@v4
+        with:
+          name: SteamOS-Boot-Mode-Buttons
+          path: |
+            dist/SteamOS-Boot-Mode-Buttons.zip
+            dist/SteamOS-Boot-Mode-Buttons.zip.sha256

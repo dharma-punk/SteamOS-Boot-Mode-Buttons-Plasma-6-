@@ -1,0 +1,72 @@
+name: Publish release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate package
+        run: bash scripts/validate.sh
+
+      - name: Read package version
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(python3 - <<'PY'
+          import json
+          with open('io.github.dharma_punk.steamos_boot_buttons/metadata.json', encoding='utf-8') as handle:
+              print(json.load(handle)['KPlugin']['Version'])
+          PY
+          )"
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "tag=v${VERSION}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check whether this version is already released
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+        shell: bash
+        run: |
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "exists=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "exists=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Build release assets
+        if: steps.existing.outputs.exists == 'false'
+        run: bash scripts/package.sh
+
+      - name: Publish GitHub release
+        if: steps.existing.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          gh release create "${TAG}" \
+            dist/SteamOS-Boot-Mode-Buttons.zip \
+            dist/SteamOS-Boot-Mode-Buttons.zip.sha256 \
+            --target "${GITHUB_SHA}" \
+            --title "SteamOS Boot Mode Buttons ${VERSION}" \
+            --generate-notes
+
+      - name: Version already released
+        if: steps.existing.outputs.exists == 'true'
+        run: echo "${{ steps.version.outputs.tag }} already exists; no release created."
