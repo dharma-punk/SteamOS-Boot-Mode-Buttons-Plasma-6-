@@ -52,6 +52,12 @@ jobs:
         if: steps.existing.outputs.exists == 'false'
         run: bash scripts/package.sh
 
+      - name: Verify release asset extension
+        if: steps.existing.outputs.exists == 'false'
+        run: |
+          test -f dist/SteamOS-Boot-Mode-Buttons.plasmoid
+          unzip -tqq dist/SteamOS-Boot-Mode-Buttons.plasmoid
+
       - name: Publish GitHub release
         if: steps.existing.outputs.exists == 'false'
         env:
@@ -61,8 +67,8 @@ jobs:
         shell: bash
         run: |
           gh release create "${TAG}" \
-            dist/SteamOS-Boot-Mode-Buttons.zip \
-            dist/SteamOS-Boot-Mode-Buttons.zip.sha256 \
+            dist/SteamOS-Boot-Mode-Buttons.plasmoid \
+            dist/SteamOS-Boot-Mode-Buttons.plasmoid.sha256 \
             --target "${GITHUB_SHA}" \
             --title "SteamOS Boot Mode Buttons ${VERSION}" \
             --generate-notes
