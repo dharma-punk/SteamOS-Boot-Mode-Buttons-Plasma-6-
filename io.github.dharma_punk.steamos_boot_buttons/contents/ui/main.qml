@@ -2,24 +2,32 @@ import QtQuick
 import QtQuick.Layouts
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.components as PlasmaComponents
+import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.plasma.plasmoid
 
 PlasmoidItem {
     id: root
 
-    readonly property string desktopCommand: "steamos-session-select plasma-x11-persistent"
-    readonly property string gameCommand: "steamos-session-select gamescope"
+    readonly property string desktopCommand: "steamosctl set-default-login-mode desktop"
+    readonly property string gameCommand: "steamosctl set-default-login-mode game"
+    readonly property bool inPanel: Plasmoid.formFactor === PlasmaCore.Types.Horizontal || Plasmoid.formFactor === PlasmaCore.Types.Vertical
+    readonly property bool verticalPanel: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     property bool busy: false
-    property bool helperAvailable: true
+    property bool steamosctlAvailable: false
     property bool statusIsError: false
     property string activeMode: ""
-    property string statusText: i18n("Checking SteamOS support...")
+    property string statusText: i18n("Checking SteamOS support…")
 
-    width: Kirigami.Units.gridUnit * 18
-    height: Kirigami.Units.gridUnit * 8
+    implicitWidth: Kirigami.Units.gridUnit * (inPanel ? (verticalPanel ? 3 : 10) : 18)
+    implicitHeight: Kirigami.Units.gridUnit * (inPanel ? (verticalPanel ? 6 : 3) : 8)
+    width: implicitWidth
+    height: implicitHeight
+
     Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation
+    toolTipMainText: i18n("SteamOS Boot Mode Buttons")
+    toolTipSubText: statusText
 
     function exitCode(data) {
         if (data["exit code"] !== undefined) {
@@ -34,40 +42,49 @@ PlasmoidItem {
         return -1
     }
 
-    function errorMessage(data) {
+    function commandError(data) {
         const stderr = data["stderr"] === undefined ? "" : String(data["stderr"]).trim()
-        return stderr.length > 0 ? stderr : i18n("The SteamOS command failed.")
+        const stdout = data["stdout"] === undefined ? "" : String(data["stdout"]).trim()
+
+        if (stderr.length > 0) {
+            return stderr
+        }
+        if (stdout.length > 0) {
+            return stdout
+        }
+        return i18n("SteamOS could not change the default boot mode.")
     }
 
-    function checkHelper() {
-        statusText = i18n("Checking SteamOS support...")
-        helperCheck.connectSource("command -v steamos-session-select")
+    function checkSupport() {
+        statusText = i18n("Checking SteamOS support…")
+        supportCheck.connectSource("command -v steamosctl >/dev/null 2>&1")
     }
 
     function selectMode(modeName, command) {
-        if (busy || !helperAvailable) {
+        if (busy || !steamosctlAvailable) {
             return
         }
 
         busy = true
         statusIsError = false
         activeMode = modeName
-        statusText = i18n("Applying %1 mode...", modeName)
+        statusText = i18n("Setting %1 as the default boot mode…", modeName)
         commandRunner.connectSource(command)
     }
 
     Plasma5Support.DataSource {
-        id: helperCheck
+        id: supportCheck
         engine: "executable"
         connectedSources: []
 
         onNewData: function(sourceName, data) {
             disconnectSource(sourceName)
-            root.helperAvailable = root.exitCode(data) === 0
-            root.statusIsError = !root.helperAvailable
-            root.statusText = root.helperAvailable
-                ? i18n("Ready")
-                : i18n("steamos-session-select is not available on this system.")
+
+            root.steamosctlAvailable = root.exitCode(data) === 0
+            root.statusIsError = !root.steamosctlAvailable
+            root.statusText = root.steamosctlAvailable
+                ? i18n("Ready. Changes take effect after reboot.")
+                : i18n("steamosctl was not found. SteamOS 3.8 or newer is required.")
         }
     }
 
@@ -78,17 +95,23 @@ PlasmoidItem {
 
         onNewData: function(sourceName, data) {
             disconnectSource(sourceName)
+
             const succeeded = root.exitCode(data) === 0
+            const completedMode = root.activeMode
+
             root.busy = false
-            root.statusIsError = !succeeded
-            root.statusText = succeeded
-                ? i18n("%1 mode selected.", root.activeMode)
-                : root.errorMessage(data)
             root.activeMode = ""
+            root.statusIsError = !succeeded
+
+            if (succeeded) {
+                root.statusText = i18n("Default boot set to %1. This will take effect after reboot.", completedMode)
+            } else {
+                root.statusText = root.commandError(data)
+            }
         }
     }
 
-    Component.onCompleted: checkHelper()
+    Component.onCompleted: checkSupport()
 
     ColumnLayout {
         anchors.fill: parent
@@ -96,42 +119,54 @@ PlasmoidItem {
         spacing: Kirigami.Units.smallSpacing
 
         Kirigami.Heading {
-            text: i18n("Set default boot mode")
+            visible: !root.inPanel
+            text: i18n("Default boot mode")
             level: 3
             Layout.fillWidth: true
+            Accessible.name: text
         }
 
         PlasmaComponents.Label {
-            text: i18n("Choose what SteamOS starts after rebooting.")
+            visible: !root.inPanel
+            text: i18n("Choose whether SteamOS starts in Desktop or Gaming mode after rebooting.")
             opacity: 0.75
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
+            Accessible.name: text
         }
 
-        RowLayout {
+        GridLayout {
             Layout.fillWidth: true
-            spacing: Kirigami.Units.smallSpacing
+            Layout.fillHeight: root.inPanel
+            columns: root.verticalPanel ? 1 : 2
+            columnSpacing: Kirigami.Units.smallSpacing
+            rowSpacing: Kirigami.Units.smallSpacing
 
             PlasmaComponents.Button {
-                text: i18n("Desktop")
+                text: root.verticalPanel ? "" : i18n("Desktop")
                 icon.name: "computer"
-                enabled: !root.busy && root.helperAvailable
+                enabled: !root.busy && root.steamosctlAvailable
                 Layout.fillWidth: true
-                Accessible.name: i18n("Use Desktop mode after rebooting")
-                onClicked: root.selectMode(i18n("Desktop"), root.desktopCommand)
+                Layout.fillHeight: root.inPanel
+                Accessible.name: i18n("Set Desktop mode as the default boot mode")
+                Accessible.description: i18n("Changes the next and future SteamOS boots to Desktop mode without switching the current session")
+                onClicked: root.selectMode(i18n("Desktop mode"), root.desktopCommand)
             }
 
             PlasmaComponents.Button {
-                text: i18n("Gaming")
+                text: root.verticalPanel ? "" : i18n("Gaming")
                 icon.name: "applications-games"
-                enabled: !root.busy && root.helperAvailable
+                enabled: !root.busy && root.steamosctlAvailable
                 Layout.fillWidth: true
-                Accessible.name: i18n("Use Gaming mode after rebooting")
-                onClicked: root.selectMode(i18n("Gaming"), root.gameCommand)
+                Layout.fillHeight: root.inPanel
+                Accessible.name: i18n("Set Gaming mode as the default boot mode")
+                Accessible.description: i18n("Changes the next and future SteamOS boots to Gaming mode without switching the current session")
+                onClicked: root.selectMode(i18n("Gaming mode"), root.gameCommand)
             }
         }
 
         PlasmaComponents.Label {
+            visible: !root.inPanel
             text: root.statusText
             color: root.statusIsError ? Kirigami.Theme.negativeTextColor : Kirigami.Theme.textColor
             opacity: 0.85
