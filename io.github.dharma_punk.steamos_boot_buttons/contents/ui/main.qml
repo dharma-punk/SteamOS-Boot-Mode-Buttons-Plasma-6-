@@ -9,15 +9,18 @@ import org.kde.plasma.plasmoid
 PlasmoidItem {
     id: root
 
-    readonly property string desktopCommand: "steamosctl set-default-login-mode desktop"
-    readonly property string gameCommand: "steamosctl set-default-login-mode game"
-    readonly property bool inPanel: Plasmoid.formFactor === PlasmaCore.Types.Horizontal || Plasmoid.formFactor === PlasmaCore.Types.Vertical
-    readonly property bool verticalPanel: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+    readonly property string desktopMode: "desktop"
+    readonly property string gameMode: "game"
+    readonly property string defaultModeQueryCommand: "steamosctl get-default-login-mode"
+    readonly property bool inPanel: plasmoid.formFactor === PlasmaCore.Types.Horizontal || plasmoid.formFactor === PlasmaCore.Types.Vertical
+    readonly property bool verticalPanel: plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     property bool busy: false
     property bool steamosctlAvailable: false
     property bool statusIsError: false
-    property string activeMode: ""
+    property string currentDefaultMode: ""
+    property string pendingMode: ""
+    property string verificationMode: ""
     property string statusText: i18n("Checking SteamOS support…")
 
     implicitWidth: Kirigami.Units.gridUnit * (inPanel ? (verticalPanel ? 3 : 10) : 18)
@@ -25,7 +28,6 @@ PlasmoidItem {
     width: implicitWidth
     height: implicitHeight
 
-    Plasmoid.preferredRepresentation: Plasmoid.fullRepresentation
     toolTipMainText: i18n("SteamOS Boot Mode Buttons")
     toolTipSubText: statusText
 
@@ -42,17 +44,40 @@ PlasmoidItem {
         return -1
     }
 
-    function commandError(data) {
-        const stderr = data["stderr"] === undefined ? "" : String(data["stderr"]).trim()
+    function outputText(data) {
         const stdout = data["stdout"] === undefined ? "" : String(data["stdout"]).trim()
+        const stderr = data["stderr"] === undefined ? "" : String(data["stderr"]).trim()
+        return stdout.length > 0 ? stdout : stderr
+    }
 
-        if (stderr.length > 0) {
-            return stderr
+    function commandError(data) {
+        const message = outputText(data)
+        return message.length > 0 ? message : i18n("SteamOS could not change the default boot mode.")
+    }
+
+    function parseDefaultMode(data) {
+        const text = outputText(data).toLowerCase()
+        if (text.indexOf("desktop") !== -1) {
+            return desktopMode
         }
-        if (stdout.length > 0) {
-            return stdout
+        if (text.indexOf("game") !== -1) {
+            return gameMode
         }
-        return i18n("SteamOS could not change the default boot mode.")
+        return ""
+    }
+
+    function modeLabel(mode) {
+        if (mode === desktopMode) {
+            return i18n("Desktop mode")
+        }
+        if (mode === gameMode) {
+            return i18n("Gaming mode")
+        }
+        return i18n("Unknown mode")
+    }
+
+    function setModeCommand(mode) {
+        return "steamosctl set-default-login-mode " + mode
     }
 
     function checkSupport() {
@@ -60,16 +85,27 @@ PlasmoidItem {
         supportCheck.connectSource("command -v steamosctl >/dev/null 2>&1")
     }
 
-    function selectMode(modeName, command) {
+    function refreshDefaultMode(modeToVerify) {
+        verificationMode = modeToVerify || ""
+        defaultModeQuery.connectSource(defaultModeQueryCommand)
+    }
+
+    function selectMode(mode) {
         if (busy || !steamosctlAvailable) {
+            return
+        }
+
+        if (currentDefaultMode === mode) {
+            statusIsError = false
+            statusText = i18n("%1 is already the default. No change was made.", modeLabel(mode))
             return
         }
 
         busy = true
         statusIsError = false
-        activeMode = modeName
-        statusText = i18n("Setting %1 as the default boot mode…", modeName)
-        commandRunner.connectSource(command)
+        pendingMode = mode
+        statusText = i18n("Setting %1 as the default boot mode…", modeLabel(mode))
+        commandRunner.connectSource(setModeCommand(mode))
     }
 
     Plasma5Support.DataSource {
@@ -82,9 +118,59 @@ PlasmoidItem {
 
             root.steamosctlAvailable = root.exitCode(data) === 0
             root.statusIsError = !root.steamosctlAvailable
-            root.statusText = root.steamosctlAvailable
-                ? i18n("Ready. Changes take effect after reboot.")
-                : i18n("steamosctl was not found. SteamOS 3.8 or newer is required.")
+
+            if (root.steamosctlAvailable) {
+                root.statusText = i18n("Reading current default boot mode…")
+                root.refreshDefaultMode("")
+            } else {
+                root.statusText = i18n("steamosctl was not found. A current SteamOS release with steamosctl is required.")
+            }
+        }
+    }
+
+    Plasma5Support.DataSource {
+        id: defaultModeQuery
+        engine: "executable"
+        connectedSources: []
+
+        onNewData: function(sourceName, data) {
+            disconnectSource(sourceName)
+
+            const succeeded = root.exitCode(data) === 0
+            const reportedMode = succeeded ? root.parseDefaultMode(data) : ""
+            const expectedMode = root.verificationMode
+            root.verificationMode = ""
+
+            if (reportedMode.length > 0) {
+                root.currentDefaultMode = reportedMode
+            }
+
+            if (expectedMode.length > 0) {
+                root.busy = false
+                root.pendingMode = ""
+
+                if (reportedMode === expectedMode) {
+                    root.statusIsError = false
+                    root.statusText = i18n("Default boot verified as %1. The change applies on the next boot/login.", root.modeLabel(expectedMode))
+                } else if (!succeeded || reportedMode.length === 0) {
+                    root.currentDefaultMode = expectedMode
+                    root.statusIsError = false
+                    root.statusText = i18n("SteamOS accepted %1 as the default, but this SteamOS build could not report the setting back for verification.", root.modeLabel(expectedMode))
+                } else {
+                    root.statusIsError = true
+                    root.statusText = i18n("SteamOS reported %1 after %2 was requested.", root.modeLabel(reportedMode), root.modeLabel(expectedMode))
+                }
+                return
+            }
+
+            root.busy = false
+            if (reportedMode.length > 0) {
+                root.statusIsError = false
+                root.statusText = i18n("Current default: %1. Changes apply on the next boot/login.", root.modeLabel(reportedMode))
+            } else {
+                root.statusIsError = false
+                root.statusText = i18n("Ready. This SteamOS build could not report the current default, so changes cannot be pre-checked.")
+            }
         }
     }
 
@@ -97,15 +183,16 @@ PlasmoidItem {
             disconnectSource(sourceName)
 
             const succeeded = root.exitCode(data) === 0
-            const completedMode = root.activeMode
-
-            root.busy = false
-            root.activeMode = ""
-            root.statusIsError = !succeeded
+            const completedMode = root.pendingMode
 
             if (succeeded) {
-                root.statusText = i18n("Default boot set to %1. This will take effect after reboot.", completedMode)
+                root.statusIsError = false
+                root.statusText = i18n("SteamOS accepted the change. Verifying…")
+                root.refreshDefaultMode(completedMode)
             } else {
+                root.busy = false
+                root.pendingMode = ""
+                root.statusIsError = true
                 root.statusText = root.commandError(data)
             }
         }
@@ -143,25 +230,25 @@ PlasmoidItem {
             rowSpacing: Kirigami.Units.smallSpacing
 
             PlasmaComponents.Button {
-                text: root.verticalPanel ? "" : i18n("Desktop")
+                text: root.verticalPanel ? "" : (root.currentDefaultMode === root.desktopMode ? i18n("Desktop ✓") : i18n("Desktop"))
                 icon.name: "computer"
                 enabled: !root.busy && root.steamosctlAvailable
                 Layout.fillWidth: true
                 Layout.fillHeight: root.inPanel
                 Accessible.name: i18n("Set Desktop mode as the default boot mode")
-                Accessible.description: i18n("Changes the next and future SteamOS boots to Desktop mode without switching the current session")
-                onClicked: root.selectMode(i18n("Desktop mode"), root.desktopCommand)
+                Accessible.description: i18n("Uses SteamOS default-login configuration and does not invoke a live session-switch command")
+                onClicked: root.selectMode(root.desktopMode)
             }
 
             PlasmaComponents.Button {
-                text: root.verticalPanel ? "" : i18n("Gaming")
+                text: root.verticalPanel ? "" : (root.currentDefaultMode === root.gameMode ? i18n("Gaming ✓") : i18n("Gaming"))
                 icon.name: "applications-games"
                 enabled: !root.busy && root.steamosctlAvailable
                 Layout.fillWidth: true
                 Layout.fillHeight: root.inPanel
                 Accessible.name: i18n("Set Gaming mode as the default boot mode")
-                Accessible.description: i18n("Changes the next and future SteamOS boots to Gaming mode without switching the current session")
-                onClicked: root.selectMode(i18n("Gaming mode"), root.gameCommand)
+                Accessible.description: i18n("Uses SteamOS default-login configuration and does not invoke a live session-switch command")
+                onClicked: root.selectMode(root.gameMode)
             }
         }
 
