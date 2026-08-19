@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.3
+
+- Fixed the Plasma 6 runtime error caused by assigning `preferredRepresentation` through the attached `Plasmoid` object; the unnecessary assignment is now removed.
+- Added `steamosctl get-default-login-mode` support so the widget can read the current default boot mode.
+- Avoids running `set-default-login-mode` when the requested mode is already selected, preventing unnecessary SteamOS configuration writes.
+- Re-queries the default mode after a successful change and verifies the result when the current SteamOS build supports the getter.
+- Added CI regression checks that reject legacy `steamos-session-select`, live `switch-to-*` session commands, forced desktop-session selection, and the invalid Plasma 6 `Plasmoid.preferredRepresentation` pattern.
+- Clarified refresh diagnostics: the widget never requests a live session switch, reboot, SDDM restart, or Plasma restart; any refresh caused by a direct `set-default-login-mode` command is a SteamOS/`steamos-manager` side effect to track against that SteamOS build.
+
 ## 2.0.2
 
 - Added a filename-independent one-command installer for SteamOS Desktop Mode.
