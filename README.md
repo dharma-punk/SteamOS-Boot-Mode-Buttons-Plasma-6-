@@ -1,8 +1,8 @@
 # SteamOS Boot Mode Buttons
 
-**Choose whether SteamOS boots into Desktop Mode or Gaming Mode — without changing or restarting the session you are using right now.**
+**Choose whether SteamOS boots into Desktop Mode or Gaming Mode from a simple Plasma 6 widget.**
 
-A lightweight KDE Plasma 6 widget for SteamOS 3.8+ that puts Valve's default-login-mode controls behind two simple buttons.
+SteamOS Boot Mode Buttons is a lightweight front end for Valve's default-login-mode controls. It is aimed at Steam Deck and other current SteamOS systems where you sometimes want a desktop-first machine and sometimes want the normal gaming-first experience.
 
 ## Why use it?
 
@@ -13,32 +13,47 @@ SteamOS Boot Mode Buttons is useful when you want to:
 - **Use a docked Steam Deck like a desktop PC** and boot straight into Desktop Mode.
 - **Return to the normal console-style experience** and make Gaming Mode the default again.
 - **Switch between desktop-first and gaming-first setups** without memorizing terminal commands.
-- Avoid the older persistent-session method that could refresh/restart the desktop or force a specific X11 session.
+- Avoid the legacy persistent-session helper that could force a specific desktop session and had more disruptive session behavior.
 
 ## What it does
 
 The widget has two actions:
 
-- **Desktop** → make Desktop Mode the default for future boots.
-- **Gaming** → make Gaming Mode the default for future boots.
+- **Desktop** → make Desktop Mode the default for future boots/logins.
+- **Gaming** → make Gaming Mode the default for future boots/logins.
 
-Under the hood it uses Valve's current SteamOS management interface:
+Version 2.0.3 first asks SteamOS what the current default is:
+
+```bash
+steamosctl get-default-login-mode
+```
+
+If the requested mode is already the default, the widget **does nothing** and reports that no change was needed. If it needs to change the setting, it uses Valve's current configuration command:
 
 ```bash
 steamosctl set-default-login-mode desktop
 steamosctl set-default-login-mode game
 ```
 
-The choice takes effect on a future boot/login. Pressing a button does **not** immediately switch sessions, reboot the device, restart SDDM, or force X11/Wayland.
+After a change, the widget queries SteamOS again and verifies the reported default when that query is available.
+
+The widget **never calls** SteamOS's live session-switch commands (`switch-to-desktop-mode`, `switch-to-game-mode`, or `switch-to-login-mode`). It also does not contain a reboot command or an SDDM/Plasma restart command.
+
+> [!NOTE]
+> SteamOS still owns the implementation of `set-default-login-mode`. If a specific SteamOS build visibly redraws or restarts part of the desktop when that configuration command is run, that side effect is inside SteamOS rather than a live-switch request from this widget. See the refresh diagnostic below.
 
 ## Features
 
 - Desktop and Gaming default-boot buttons.
+- Reads and displays the current default boot mode when SteamOS supports the query.
+- Marks the currently selected default in the button label.
+- Does not re-run the setter when the selected mode is already the default.
+- Verifies the setting after a successful change when SteamOS supports the query.
 - Uses current `steamosctl` instead of legacy `steamos-session-select`.
-- Non-disruptive: keeps the current desktop/session running.
+- Never invokes SteamOS live session-switch commands.
 - Desktop-session neutral: SteamOS remains in control of X11 vs Wayland.
 - Detects whether `steamosctl` is available before enabling actions.
-- Clear ready, working, success, and error status messages.
+- Clear ready, working, verified-success, fallback-success, and error status messages.
 - Prevents overlapping command runs.
 - Adapts to desktop, horizontal-panel, and vertical-panel placement.
 - Native Plasma 6 QML package with accessibility labels and descriptions.
@@ -85,36 +100,28 @@ For more installation and troubleshooting details, see [INSTALL.md](INSTALL.md).
 ### Set Desktop boot
 
 ```text
+Widget reads current default
+        ↓
+Already Desktop? ── yes ──> No write is performed
+        │
+        no
+        ↓
 Click Desktop
-     ↓
-SteamOS records Desktop as the default login mode
-     ↓
-Your current session stays open
-     ↓
-Reboot whenever you want
-     ↓
-SteamOS starts in Desktop Mode
+        ↓
+steamosctl set-default-login-mode desktop
+        ↓
+Widget reads the setting back for verification
+        ↓
+Reboot/login later → SteamOS uses Desktop Mode as the default
 ```
 
-### Set Gaming boot
-
-```text
-Click Gaming
-     ↓
-SteamOS records Gaming as the default login mode
-     ↓
-Your current session stays open
-     ↓
-Reboot whenever you want
-     ↓
-SteamOS starts in Gaming Mode
-```
+Gaming works the same way with `game` as the requested default.
 
 ## What it intentionally does not do
 
-This widget does not:
+This widget does not directly:
 
-- switch you out of the session you are currently using;
+- invoke a live Desktop/Gaming session switch;
 - automatically reboot;
 - restart SDDM or Plasma;
 - force Plasma X11 or Plasma Wayland;
@@ -122,19 +129,43 @@ This widget does not:
 - run user-entered shell commands;
 - require root access.
 
-It is intentionally a small GUI for SteamOS's default boot-mode setting.
+It is intentionally a small GUI for SteamOS's default boot/login-mode configuration.
 
 ## Compatibility
 
 | Environment | Status |
 | --- | --- |
-| SteamOS 3.8+ / Plasma 6 | Supported target |
+| Current SteamOS with `steamosctl` / Plasma 6 | Supported target |
 | Steam Deck LCD / OLED on current SteamOS | Supported target |
 | Other current SteamOS hardware | API-compatible target |
 | SteamOS releases without `steamosctl` | Not supported by v2 |
 | Non-SteamOS Plasma systems | Not supported unless they provide compatible `steamosctl` behavior |
 
 ## Troubleshooting
+
+### Widget says `Cannot assign to non-existent property preferredRepresentation`
+
+That was a Plasma 6 API bug in versions through 2.0.2. KDE moved `preferredRepresentation` onto the root `PlasmoidItem`; 2.0.3 removes the unnecessary assignment entirely.
+
+Update with the recommended installer command above.
+
+### Desktop visibly refreshes when changing the default
+
+Version 2.0.3 avoids unnecessary writes by reading `get-default-login-mode` first. It also never calls a `switch-to-*` command.
+
+To determine whether a remaining refresh comes from SteamOS itself, run this directly in Konsole:
+
+```bash
+steamosctl get-default-login-mode
+```
+
+If it is not already `desktop`, run:
+
+```bash
+steamosctl set-default-login-mode desktop
+```
+
+If **that direct SteamOS command** causes the same desktop refresh, the side effect is in the current SteamOS/`steamos-manager` implementation. Please include your SteamOS version when filing an issue so it can be tracked against that build.
 
 ### `No such file: ~/Downloads/SteamOS-Boot-Mode-Buttons.plasmoid`
 
@@ -183,7 +214,7 @@ bash scripts/package.sh
 
 The resulting `.plasmoid` is ZIP-formatted internally and contains `metadata.json` and `contents/` at its archive root, matching KDE's Plasma 6 widget package structure.
 
-GitHub Actions validate package metadata and archive structure on every change. Release automation publishes the installable `.plasmoid` plus its SHA-256 checksum whenever the widget version is bumped on `main`.
+GitHub Actions validate package metadata, archive structure, Plasma 6 API regressions, and the absence of legacy/live-switch commands on every change. Release automation publishes the installable `.plasmoid` plus its SHA-256 checksum whenever the widget version is bumped on `main`.
 
 See [docs/KDE_STORE.md](docs/KDE_STORE.md) for KDE Store publication notes.
 
