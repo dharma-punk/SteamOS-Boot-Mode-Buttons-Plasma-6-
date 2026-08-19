@@ -46,14 +46,26 @@ if grep -Eq '"X-Plasma-API"|import .+ [0-9]+\.[0-9]+' "${METADATA}" "${MAIN_QML}
   exit 1
 fi
 
+if grep -Fq 'Plasmoid.preferredRepresentation' "${MAIN_QML}"; then
+  echo "preferredRepresentation is a PlasmoidItem property in Plasma 6; do not assign it through Plasmoid." >&2
+  exit 1
+fi
+
 if grep -Rq "steamos-session-select" "${PACKAGE_DIR}"; then
   echo "Legacy steamos-session-select usage is not allowed in v2." >&2
   exit 1
 fi
 
-grep -Fq 'steamosctl set-default-login-mode desktop' "${MAIN_QML}"
-grep -Fq 'steamosctl set-default-login-mode game' "${MAIN_QML}"
+grep -Fq 'steamosctl set-default-login-mode ' "${MAIN_QML}"
+grep -Fq 'steamosctl get-default-login-mode' "${MAIN_QML}"
+grep -Fq 'readonly property string desktopMode: "desktop"' "${MAIN_QML}"
+grep -Fq 'readonly property string gameMode: "game"' "${MAIN_QML}"
 grep -Fq 'command -v steamosctl' "${MAIN_QML}"
+
+if grep -Rq "switch-to-desktop-mode\|switch-to-game-mode\|switch-to-login-mode" "${PACKAGE_DIR}"; then
+  echo "The boot-mode widget must not invoke live SteamOS session-switch commands." >&2
+  exit 1
+fi
 
 if grep -Rq "set-default-desktop-session" "${PACKAGE_DIR}"; then
   echo "The boot-mode widget must not force X11, Wayland, or another desktop session." >&2
