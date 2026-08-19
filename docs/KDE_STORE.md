@@ -10,17 +10,17 @@ SteamOS Boot Mode Buttons v2 is intentionally a pure-QML Plasma 6 package so it 
 
 **Description:**
 
-SteamOS Boot Mode Buttons adds two focused actions to KDE Plasma: set Desktop Mode as the default boot target, or set Gaming Mode as the default boot target. Version 2.0.1 uses SteamOS's current `steamosctl` management interface and targets SteamOS 3.8+.
+SteamOS Boot Mode Buttons adds two focused actions to KDE Plasma: set Desktop Mode as the default boot target, or set Gaming Mode as the default boot target. Version 2.0.4 uses SteamOS's current `steamosctl` management interface, displays the reported default, avoids unnecessary writes, and verifies successful changes when the installed SteamOS build supports the query.
 
 The widget changes only the default boot/login mode. It does not immediately switch sessions, restart SDDM, reboot the device, or force X11/Wayland. Desktop session selection remains under SteamOS control.
 
 **Requirements:**
 
-- SteamOS 3.8 or newer
+- A current SteamOS release with `steamosctl`
 - KDE Plasma 6
 - `steamosctl`
 
-**Version:** 2.0.1
+**Version:** 2.0.4
 
 **License:** MIT
 
@@ -49,9 +49,11 @@ contents/
 
 ## Publication checklist
 
-- [ ] Install the release `.plasmoid` on a current SteamOS 3.8+ device using **Add Widgets → Get New Widgets → Install from File…**.
-- [ ] Verify Desktop changes the next boot target without refreshing/restarting the current desktop.
+- [ ] Install the release `.plasmoid` on a current SteamOS device using **Add Widgets → Get New Widgets → Install from File…**.
+- [ ] Verify Desktop changes the next boot target while the current desktop session remains open.
 - [ ] Verify Gaming changes the next boot target without switching the current session.
+- [ ] Verify pressing the already-selected mode performs no configuration write.
+- [ ] Verify the selected mode is marked in the widget after the setting is read back.
 - [ ] Reboot once after each choice and confirm the selected mode starts.
 - [ ] Capture current screenshots.
 - [ ] Upload the release `.plasmoid` to the KDE Store / OpenDesktop Plasma widget category.
