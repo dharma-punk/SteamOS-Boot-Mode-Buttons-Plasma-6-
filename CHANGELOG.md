@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.4
+
+- Prevented the initial default-mode query from overlapping with a button action, eliminating a race that could verify a change against stale query output.
+- Simplified the asynchronous state tracking to one requested-mode value instead of separate pending and verification values.
+- Mode detection now reads only successful standard output and matches complete `desktop` or `game` values instead of loose substrings.
+- Command failures now prefer the more useful standard-error message when SteamOS also writes to standard output.
+- Updated GitHub Actions checkout steps to the current supported major and removed an unnecessary full-history fetch from releases.
+- Updated the KDE Store publication notes and checklist to match the current widget release and behavior.
+
 ## 2.0.3
 
 - Fixed the Plasma 6 runtime error caused by assigning `preferredRepresentation` through the attached `Plasmoid` object; the unnecessary assignment is now removed.

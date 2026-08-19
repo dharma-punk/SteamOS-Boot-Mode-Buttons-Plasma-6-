@@ -19,8 +19,7 @@ PlasmoidItem {
     property bool steamosctlAvailable: false
     property bool statusIsError: false
     property string currentDefaultMode: ""
-    property string pendingMode: ""
-    property string verificationMode: ""
+    property string requestedMode: ""
     property string statusText: i18n("Checking SteamOS support…")
 
     implicitWidth: Kirigami.Units.gridUnit * (inPanel ? (verticalPanel ? 3 : 10) : 18)
@@ -44,23 +43,26 @@ PlasmoidItem {
         return -1
     }
 
-    function outputText(data) {
-        const stdout = data["stdout"] === undefined ? "" : String(data["stdout"]).trim()
-        const stderr = data["stderr"] === undefined ? "" : String(data["stderr"]).trim()
-        return stdout.length > 0 ? stdout : stderr
+    function stdoutText(data) {
+        return data["stdout"] === undefined ? "" : String(data["stdout"]).trim()
+    }
+
+    function stderrText(data) {
+        return data["stderr"] === undefined ? "" : String(data["stderr"]).trim()
     }
 
     function commandError(data) {
-        const message = outputText(data)
+        const stderr = stderrText(data)
+        const message = stderr.length > 0 ? stderr : stdoutText(data)
         return message.length > 0 ? message : i18n("SteamOS could not change the default boot mode.")
     }
 
     function parseDefaultMode(data) {
-        const text = outputText(data).toLowerCase()
-        if (text.indexOf("desktop") !== -1) {
+        const text = stdoutText(data).toLowerCase()
+        if (/\bdesktop\b/.test(text)) {
             return desktopMode
         }
-        if (text.indexOf("game") !== -1) {
+        if (/\bgame\b/.test(text)) {
             return gameMode
         }
         return ""
@@ -85,8 +87,8 @@ PlasmoidItem {
         supportCheck.connectSource("command -v steamosctl >/dev/null 2>&1")
     }
 
-    function refreshDefaultMode(modeToVerify) {
-        verificationMode = modeToVerify || ""
+    function refreshDefaultMode() {
+        busy = true
         defaultModeQuery.connectSource(defaultModeQueryCommand)
     }
 
@@ -103,7 +105,7 @@ PlasmoidItem {
 
         busy = true
         statusIsError = false
-        pendingMode = mode
+        requestedMode = mode
         statusText = i18n("Setting %1 as the default boot mode…", modeLabel(mode))
         commandRunner.connectSource(setModeCommand(mode))
     }
@@ -121,7 +123,8 @@ PlasmoidItem {
 
             if (root.steamosctlAvailable) {
                 root.statusText = i18n("Reading current default boot mode…")
-                root.refreshDefaultMode("")
+                root.requestedMode = ""
+                root.refreshDefaultMode()
             } else {
                 root.statusText = i18n("steamosctl was not found. A current SteamOS release with steamosctl is required.")
             }
@@ -138,8 +141,7 @@ PlasmoidItem {
 
             const succeeded = root.exitCode(data) === 0
             const reportedMode = succeeded ? root.parseDefaultMode(data) : ""
-            const expectedMode = root.verificationMode
-            root.verificationMode = ""
+            const expectedMode = root.requestedMode
 
             if (reportedMode.length > 0) {
                 root.currentDefaultMode = reportedMode
@@ -147,7 +149,7 @@ PlasmoidItem {
 
             if (expectedMode.length > 0) {
                 root.busy = false
-                root.pendingMode = ""
+                root.requestedMode = ""
 
                 if (reportedMode === expectedMode) {
                     root.statusIsError = false
@@ -183,15 +185,14 @@ PlasmoidItem {
             disconnectSource(sourceName)
 
             const succeeded = root.exitCode(data) === 0
-            const completedMode = root.pendingMode
 
             if (succeeded) {
                 root.statusIsError = false
                 root.statusText = i18n("SteamOS accepted the change. Verifying…")
-                root.refreshDefaultMode(completedMode)
+                root.refreshDefaultMode()
             } else {
                 root.busy = false
-                root.pendingMode = ""
+                root.requestedMode = ""
                 root.statusIsError = true
                 root.statusText = root.commandError(data)
             }
